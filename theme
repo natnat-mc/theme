@@ -1,0 +1,154 @@
+#!/bin/env lua
+local args={...}
+local themedir='/data/data/com.termux/files/home/themes'
+local termuxdir='/data/data/com.termux/files/home/.termux'
+local font, color, edit, vi, theme=true, true, false, false
+local set, export={}
+
+local function test(args)
+	local a, b, code=os.execute('[ '..args..' ]')
+	return code==0
+end
+local function isdir(path)
+	return test('-d '..path)
+end
+local function isfile(path)
+	return test('-f '..path)
+end
+local function ls(path)
+	return io.popen('ls '..path):lines()
+end
+
+local function printusage()
+	print('Usage:')
+	print('\ttheme [-f|-c] [-e] <theme> [-o name] [-s <key> <value>]')
+	print('Or\ttheme -s <key> <value>')
+	print('Or\ttheme -e')
+	print('Or\ttheme -o name')
+	print('Or\ttheme [-l]')
+	print('[-f] only sets the font')
+	print('[-c] only sets the color')
+	print('[-s <key> <value>] sets "key=value" in theme, can be repeated')
+	print('[-e] opens colors.properties with vi')
+	print('[-o <name>] exports the theme')
+end
+
+if not isdir(themedir) then
+		os.execute('mkdir '..themedir)
+end
+if not isdir(termuxdir) then
+		os.execute('mkdir '..termuxdir)
+end
+
+if #args==0 or args[1]=='-l' then
+	for theme in ls(themedir) do
+		io.write '\x1b[34m'
+		io.write(theme)
+		io.write '\x1b[0m'
+		if isfile(themedir..'/'..theme..'/colors.properties') then
+			io.write ' \x1b[32mcolors\x1b[0m'
+		end
+		if isfile(themedir..'/'..theme..'/font.ttf') then
+			io.write ' \x1b[33mfont\x1b[0m'
+		end
+		io.write '\n'
+	end
+	os.exit(0)
+end
+
+local i
+local opt
+local curr
+for i=1, #args do
+	local arg=args[i]
+	if arg:match('-') then
+		opt=arg:match('-([cfsheo])')
+		if opt=='f' then
+			color, opt=false
+		elseif opt=='c' then
+			font, opt=false
+		elseif opt=='h' then
+			printusage()
+			os.exit(0)
+		elseif opt=='e' then
+			vi, opt=true
+		end
+	elseif opt=='s' then
+		opt='s+'
+		curr=arg
+	elseif opt=='s+' then
+		opt=nil
+		set[curr]='#'..arg
+		edit=true
+		print(curr..'=#'..arg)
+		curr=nil
+	elseif opt=='o' then
+		opt=nil
+		export=arg
+	elseif not theme then
+		theme=arg
+	else
+		print('Too many arguments')
+		os.exit(1)
+	end
+end
+if curr then
+	print('Too few arguments for -s')
+	os.exit(1)
+end
+
+local didsomething=false
+
+if theme then
+	print('Applying theme '..theme)
+	if not isdir(themedir..'/'..theme) then
+		print('Theme '..theme..' does not exist')
+		os.exit(1)
+	end
+	if color and isfile(themedir..'/'..theme..'/colors.properties') then
+		os.execute('cp -f '..themedir..'/'..theme..'/colors.properties '..termuxdir)
+		didsomething=true
+	end
+	if font and isfile(themedir..'/'..theme..'/font.ttf') then
+		os.execute('cp -f '..themedir..'/'..theme..'/font.ttf '..termuxdir)
+		didsomething=true
+	end
+end
+
+if edit then
+	print('Applying edits')
+	local conf={}
+	local k, v
+	for k in io.lines(termuxdir..'/colors.properties') do
+		if not (k=='' or k:sub(1,1)=='#') then
+			k, v=k:match('(.+)%s*[=:]%s*(.+)')
+			conf[k]=v
+		end
+	end
+	for k, v in pairs(set) do
+		conf[k]=v
+		didsomething=true
+	end
+	local file=io.open(termuxdir..'/colors.properties', 'w')
+	for k, v in pairs(conf) do
+		file:write(k..'='..v..'\n')
+	end
+	file:close()
+end
+if vi then
+	os.execute('vi '..termuxdir..'/colors.properties')
+	didsomething=true
+end
+if export and not isdir(themedir..'/'..export) then
+	print('Exporting theme as '..export)
+	os.execute('mkdir '..themedir..'/'..export)
+	os.execute('cp '..termuxdir..'/colors.properties '..themedir..'/'..export)
+	os.execute('cp '..termuxdir..'/font.ttf '..themedir..'/'..export)
+	didsomething=true
+end
+
+if not didsomething then
+	print('Nothing to do!')
+	os.exit(1)
+end
+os.execute('termux-reload-settings')
