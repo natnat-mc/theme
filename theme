@@ -9,6 +9,10 @@ local function test(args)
 	local a, b, code=os.execute('[ '..args..' ]')
 	return code==0
 end
+local function same(a, b)
+	local a, b, code=os.execute('diff -q '..a..' '..b..' >/dev/null')
+	return code==0
+end
 local function isdir(path)
 	return test('-d '..path)
 end
@@ -47,9 +51,19 @@ if #args==0 or args[1]=='-l' then
 		io.write '\x1b[0m'
 		if isfile(themedir..'/'..theme..'/colors.properties') then
 			io.write ' \x1b[32mcolors\x1b[0m'
+			if same(themedir..'/'..theme..'/colors.properties', termuxdir..'/colors.properties') then
+				io.write '[\x1b[34mx\x1b[0m]'
+			else
+				io.write '[ ]'
+			end
 		end
 		if isfile(themedir..'/'..theme..'/font.ttf') then
 			io.write ' \x1b[33mfont\x1b[0m'
+			if same(themedir..'/'..theme..'/font.ttf', termuxdir..'/font.ttf') then
+				io.write '[\x1b[34mx\x1b[0m]'
+			else
+				io.write '[ ]'
+			end
 		end
 		io.write '\n'
 	end
