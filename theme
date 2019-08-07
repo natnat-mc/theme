@@ -13,6 +13,10 @@ local function same(a, b)
 	local a, b, code=os.execute('diff -q '..a..' '..b..' >/dev/null')
 	return code==0
 end
+local function which(file)
+	local a, b, code=os.execute('which '..file..' >/dev/null 2>/dev/null')
+	return code==0
+end
 local function isdir(path)
 	return test('-d '..path)
 end
@@ -150,7 +154,17 @@ if edit then
 	file:close()
 end
 if vi then
-	os.execute('vi '..termuxdir..'/colors.properties')
+	local vi=os.getenv 'EDITOR'
+	if not vi then
+		if which 'vim' then
+			vi='vim'
+		elseif which 'nano' then
+			vi='nano'
+		else
+			vi='vi'
+		end
+	end
+	os.execute(vi..' '..termuxdir..'/colors.properties')
 	didsomething=true
 end
 if export and not isdir(themedir..'/'..export) then
