@@ -49,10 +49,20 @@ if not isdir(termuxdir) then
 end
 
 if #args==0 or args[1]=='-l' then
+	local themes, maxlen={}, 0
 	for theme in ls(themedir) do
+		table.insert(themes, theme)
+		if #theme>maxlen then
+			maxlen=#theme
+		end
+	end
+	for i, theme in ipairs(themes) do
 		io.write '\x1b[34m'
 		io.write(theme)
 		io.write '\x1b[0m'
+		if #theme<maxlen then
+			io.write(string.rep(' ', maxlen-#theme))
+		end
 		if isfile(themedir..'/'..theme..'/colors.properties') then
 			io.write ' \x1b[32mcolors\x1b[0m'
 			if same(themedir..'/'..theme..'/colors.properties', termuxdir..'/colors.properties') then
@@ -60,6 +70,8 @@ if #args==0 or args[1]=='-l' then
 			else
 				io.write '[ ]'
 			end
+		else
+			io.write '          '
 		end
 		if isfile(themedir..'/'..theme..'/font.ttf') then
 			io.write ' \x1b[33mfont\x1b[0m'
