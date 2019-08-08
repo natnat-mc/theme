@@ -9,7 +9,15 @@ local function test(args)
 	local a, b, code=os.execute('[ '..args..' ]')
 	return code==0
 end
-local function same(a, b)
+local function same(a, b, size)
+	if size then
+		local fd=io.popen('du '..a..' '..b..' | cut -f1 -d"\t"', 'r')
+		if fd:read '*l'~=fd:read '*l' then
+			fd:close()
+			return false
+		end
+		fd:close()
+	end
 	local a, b, code=os.execute('diff -q '..a..' '..b..' >/dev/null')
 	return code==0
 end
@@ -75,7 +83,7 @@ if #args==0 or args[1]=='-l' then
 		end
 		if isfile(themedir..'/'..theme..'/font.ttf') then
 			io.write ' \x1b[33mfont\x1b[0m'
-			if same(themedir..'/'..theme..'/font.ttf', termuxdir..'/font.ttf') then
+			if same(themedir..'/'..theme..'/font.ttf', termuxdir..'/font.ttf', true) then
 				io.write '[\x1b[34mx\x1b[0m]'
 			else
 				io.write '[ ]'
