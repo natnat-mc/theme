@@ -7,7 +7,7 @@ A simple termux theme manager
 - `theme -c <name>` to apply the colors of a theme
 - `theme -f <name>` to apply the font of a theme
 - `theme -o <name>` to export the current theme
-- `theme -e` to edit thz current theme in `vi`
+- `theme -e` to edit the current theme in `vi` or the default editor, if found
 - `theme -s <key> <value>` sets the corresponding property in the current theme
 
 
@@ -19,7 +19,7 @@ A simple termux theme manager
 The themes are stored in the `~/themes` directory.
 
 ## Installing
-To install, simply download the `theme` file from this repo, and put it somewhere in your path, with the execute permission. Make sure you have lua installed and available.
+To install, simply download the `theme` file from this repo, and put it somewhere in your path, with the execute permission. Make sure you have lua >= 5.2 installed and available.
 
 ```sh
 # install lua if it is not already present
